@@ -1,0 +1,5 @@
+# Railway deployment configuration
+# Railway will auto-detect Dockerfile and build the container
+
+[build]
+builder = "dockerfile"

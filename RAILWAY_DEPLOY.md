@@ -5,24 +5,28 @@
 Railway will automatically detect your Dockerfile and deploy your .NET application. No `railway.toml` needed!
 
 ### 1. Prerequisites
+
 - Railway account ([railway.app](https://railway.app))
 - Railway CLI installed (optional)
 
 ### 2. Deploy via GitHub (Recommended)
 
 1. **Connect Repository**
+
    - Go to [railway.app](https://railway.app)
    - Click "New Project"
    - Select "Deploy from GitHub repo"
    - Choose your `hackathon-dotnet-app` repository
 
 2. **Add PostgreSQL Database**
+
    - In your Railway project dashboard
    - Click "New Service"
    - Select "Database" → "PostgreSQL"
    - Railway will automatically set `DATABASE_URL`
 
 3. **Configure Environment Variables**
+
    ```
    JWT_SECRET_KEY=your-super-secret-jwt-key-minimum-32-characters
    ASPNETCORE_ENVIRONMENT=Production
@@ -57,13 +61,16 @@ railway up
 ### 4. Environment Variables Setup
 
 Railway automatically provides:
+
 - ✅ `DATABASE_URL` - PostgreSQL connection string
 - ✅ `PORT` - Application port (Railway sets this)
 
 You need to set:
+
 - 🔑 `JWT_SECRET_KEY` - Your secret key for JWT tokens
 
 Optional:
+
 - 🌐 `FRONTEND_URL` - Your frontend URL for CORS
 - ⚙️ `ASPNETCORE_ENVIRONMENT` - Set to "Production"
 
@@ -83,6 +90,7 @@ psql $DATABASE_URL -f database-schema.sql
 ### 6. Verify Deployment
 
 Your API will be available at:
+
 - **Base URL**: `https://your-app-name.railway.app`
 - **Health Check**: `https://your-app-name.railway.app/health`
 - **API Docs**: `https://your-app-name.railway.app/` (Swagger UI)
@@ -90,6 +98,7 @@ Your API will be available at:
 ### 7. Monitoring
 
 Railway provides:
+
 - 📊 **Logs**: Real-time application logs
 - 📈 **Metrics**: CPU, memory, network usage
 - 🔄 **Deployments**: Deployment history and rollbacks
@@ -100,6 +109,7 @@ Railway provides:
 ## ✅ Railway Configuration Summary
 
 Railway automatically detects and configures:
+
 - ✅ **Dockerfile** - Builds your .NET application
 - ✅ **Port Binding** - Uses `$PORT` environment variable
 - ✅ **Database** - PostgreSQL with `DATABASE_URL`
@@ -115,18 +125,22 @@ No `railway.toml` configuration file needed! 🎉
 ## 🐛 Troubleshooting
 
 **Issue**: Deployment fails
+
 - **Solution**: Check logs in Railway dashboard
 - **Common**: Ensure `Dockerfile` is in repository root
 
-**Issue**: Database connection fails  
+**Issue**: Database connection fails
+
 - **Solution**: Verify PostgreSQL service is running
 - **Check**: `DATABASE_URL` environment variable is set
 
 **Issue**: JWT authentication fails
+
 - **Solution**: Ensure `JWT_SECRET_KEY` is set
 - **Requirement**: Minimum 32 characters
 
 **Issue**: CORS errors
+
 - **Solution**: Set `FRONTEND_URL` or configure CORS origins
 
 ---

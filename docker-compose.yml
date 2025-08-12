@@ -1,83 +1,58 @@
-version: '3.8'
+# Railway deployment compose file
+# Uses external managed PostgreSQL database via DATABASE_PUBLIC_URL
+version: "3.8"
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:14-alpine
-    container_name: personalfinance-db
-    environment:
-      POSTGRES_DB: personalfinance
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database-schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    networks:
-      - personalfinance-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # .NET Web API
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: personalfinance-api
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=personalfinance;Username=postgres;Password=postgres123;Port=5432;
-      - Jwt__SecretKey=your-super-secret-jwt-key-that-is-at-least-32-characters-long-for-security
+      # Core application settings
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+
+      # Database connection - Railway provides DATABASE_PUBLIC_URL
+      - DATABASE_PUBLIC_URL=${DATABASE_PUBLIC_URL}
+
+      # JWT Configuration - Railway provides JWT_SECRET_KEY
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
       - Jwt__Issuer=PersonalFinanceAPI
       - Jwt__Audience=PersonalFinanceAPI-Users
       - Jwt__AccessTokenExpirationMinutes=60
       - Jwt__RefreshTokenExpirationDays=7
+
+      # Feature flags
       - FeatureFlags__EnableSwagger=true
-      - CORS__AllowedOrigins__0=http://localhost:3000
-      - CORS__AllowedOrigins__1=http://localhost:8080
-      - CORS__AllowedMethods__0=GET
-      - CORS__AllowedMethods__1=POST
-      - CORS__AllowedMethods__2=PUT
-      - CORS__AllowedMethods__3=DELETE
-      - CORS__AllowedMethods__4=OPTIONS
-      - CORS__AllowedHeaders__0=Content-Type
-      - CORS__AllowedHeaders__1=Authorization
+      - FeatureFlags__EnableDetailedErrors=false
+      - FeatureFlags__EnableRateLimiting=true
+      - FeatureFlags__EnableAuditLogging=true
+
+      # CORS settings
+      - CORS__AllowedOrigins__0=${FRONTEND_URL:-*}
+
+      # Logging
+      - Serilog__MinimumLevel__Default=Information
+      - Serilog__MinimumLevel__Override__Microsoft=Warning
+      - Serilog__MinimumLevel__Override__System=Warning
+      - Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore=Warning
+
     ports:
       - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - personalfinance-network
+
     restart: unless-stopped
-    volumes:
-      - ./logs:/app/logs
 
-  # Redis for caching (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: personalfinance-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - personalfinance-network
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-
-networks:
-  personalfinance-network:
-    driver: bridge
+    # Resource limits for Railway deployment
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
