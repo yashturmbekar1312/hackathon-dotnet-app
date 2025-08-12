@@ -1,16 +1,17 @@
 # 🏆 Personal Finance Management API
 
-A comprehensive, production-ready Personal Finance Management API built with .NET 8, Entity Framework Core, PostgreSQL, JWT Authentication, and Serilog logging. This project was created for a hackathon challenge and demonstrates modern software architecture patterns and best practices.
+A comprehensive, production-ready Personal Finance Management API built with .NET 8, Entity Framework Core, PostgreSQL, JWT Authentication, and advanced logging. This project demonstrates modern software architecture patterns, comprehensive error handling, extensive testing, and production-ready features.
 
 ## 🚀 Features
 
 ### 🔐 Authentication & Security
 
-- JWT-based authentication with refresh tokens
-- Password hashing with BCrypt
-- Rate limiting on sensitive endpoints
-- CORS configuration
-- Audit logging for compliance
+- **JWT Authentication** with refresh tokens and secure password hashing
+- **Advanced Authorization** with role-based access control and custom policies
+- **Rate Limiting** on authentication and API endpoints
+- **CORS Configuration** with environment-specific settings
+- **Security Audit Logging** for compliance and monitoring
+- **Password Complexity** validation and secure storage
 
 ### 💰 Financial Management
 
@@ -19,28 +20,38 @@ A comprehensive, production-ready Personal Finance Management API built with .NE
 - **Savings Computation**: Monthly summaries and savings projections
 - **Investment Suggestions**: AI-powered investment recommendations
 - **Analytics & Reporting**: Comprehensive financial insights and dashboards
+- **Multi-Currency Support**: Handle multiple currencies with conversion
 
 ### 🏦 Bank Integration
 
-- Account linking simulation
-- Transaction import (CSV and API simulation)
-- Data normalization and deduplication
-- Real-time transaction sync
+- **Account Linking** simulation with secure credential handling
+- **Transaction Import** (CSV and API simulation)
+- **Data Normalization** and deduplication
+- **Real-time Transaction** sync with error handling
 
-### 🔔 Smart Alerts
+### 🔔 Smart Alerts & Notifications
 
-- Budget breach notifications
-- Spending threshold alerts
-- Investment opportunity alerts
-- Customizable notification preferences
+- **Budget Breach** notifications with customizable thresholds
+- **Spending Pattern** alerts and warnings
+- **Investment Opportunity** alerts based on market conditions
+- **Customizable Notification** preferences per user
 
 ### 📊 Advanced Analytics
 
-- Monthly financial summaries
-- Spending pattern analysis
-- Category-wise breakdowns
-- Merchant spending insights
-- Savings rate calculations
+- **Monthly Financial** summaries with trends
+- **Spending Pattern** analysis with categorization
+- **Category-wise Breakdowns** with visual representations
+- **Merchant Spending** insights and recommendations
+- **Savings Rate** calculations and projections
+
+### 🛠️ Technical Excellence
+
+- **Global Exception Handling** with structured error responses
+- **Comprehensive Logging** with Serilog (Console, File, Audit logs)
+- **API Documentation** with enhanced Swagger/OpenAPI
+- **Unit & Integration Tests** with high coverage
+- **Health Checks** for monitoring and alerting
+- **Configuration Management** with environment-specific settings
 
 ## 🛠️ Technology Stack
 
@@ -232,6 +243,44 @@ Log levels:
 - **Information**: Normal operations
 - **Warning**: Budget breaches, failed validations
 - **Error**: Exceptions and failures
+
+## 🧪 Testing
+
+### Running Tests
+
+The project includes comprehensive unit and integration tests:
+
+```bash
+# Run all tests
+dotnet test
+
+# Run tests with coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+# Run specific test category
+dotnet test --filter Category=Unit
+dotnet test --filter Category=Integration
+```
+
+### Test Structure
+
+```
+📁 tests/
+  📁 PersonalFinanceAPI.Tests/
+    📁 Unit/                 # Unit tests for individual components
+      📁 Services/           # Service layer tests
+      📁 Controllers/        # Controller tests
+    📁 Integration/          # Integration tests
+      📁 Controllers/        # Full API endpoint tests
+    📁 Infrastructure/       # Test infrastructure and helpers
+```
+
+### Test Categories
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Test complete API workflows
+- **Authentication Tests**: Comprehensive auth flow testing
+- **Validation Tests**: Input validation and error handling
 
 ## 🏆 Hackathon Scoring
 

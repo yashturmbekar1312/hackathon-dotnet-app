@@ -7,6 +7,8 @@ using PersonalFinanceAPI.Infrastructure.Security;
 using PersonalFinanceAPI.Application.Services;
 using PersonalFinanceAPI.Services;
 using PersonalFinanceAPI.Core.Interfaces;
+using PersonalFinanceAPI.Infrastructure.Configuration;
+using PersonalFinanceAPI.Middleware;
 using Serilog;
 using System.Text;
 using FluentValidation;
@@ -14,11 +16,8 @@ using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .CreateLogger();
-
+// Configure Serilog early
+LoggingConfiguration.ConfigureSerilog(builder.Configuration, builder.Environment);
 builder.Host.UseSerilog();
 
 // Add services to the container
@@ -46,48 +45,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.EnableDetailedErrors(builder.Environment.IsDevelopment());
 });
 
-// JWT Authentication Configuration
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-var key = Encoding.ASCII.GetBytes(secretKey);
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ClockSkew = TimeSpan.Zero
-    };
-
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            Log.Warning("JWT Challenge: {Error}", context.Error);
-            return Task.CompletedTask;
-        }
-    };
-});
-
-builder.Services.AddAuthorization();
+// Enhanced JWT Authentication Configuration
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddAuthorizationPolicies();
 
 // CORS Configuration
 var corsSettings = builder.Configuration.GetSection("CORS");
@@ -109,63 +69,19 @@ builder.Services.AddCors(options =>
         }
 
         policy.WithMethods(allowedMethods)
-              .WithHeaders(allowedHeaders)
-              .AllowCredentials();
+              .WithHeaders(allowedHeaders);
+              
+        if (!allowedOrigins.Contains("*"))
+        {
+            policy.AllowCredentials();
+        }
     });
 });
 
-// Swagger Configuration
+// Enhanced Swagger Configuration
 if (builder.Configuration.GetValue<bool>("FeatureFlags:EnableSwagger"))
 {
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Title = "Personal Finance Management API",
-            Version = "v1",
-            Description = "A comprehensive API for personal finance management with features including transaction tracking, budget management, savings computation, investment suggestions, and analytics.",
-            Contact = new OpenApiContact
-            {
-                Name = "Personal Finance API Team",
-                Email = "support@personalfinanceapi.com",
-                Url = new Uri("https://github.com/personalfinanceapi")
-            }
-        });
-
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.ApiKey,
-            Scheme = "Bearer",
-            BearerFormat = "JWT"
-        });
-
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                Array.Empty<string>()
-            }
-        });
-
-        // Include XML comments
-        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-        if (File.Exists(xmlPath))
-        {
-            c.IncludeXmlComments(xmlPath);
-        }
-    });
+    builder.Services.AddSwaggerConfiguration();
 }
 
 // FluentValidation Configuration
@@ -185,8 +101,10 @@ builder.Services.AddScoped<IBudgetService, BudgetService>();
 // AutoMapper Configuration
 builder.Services.AddAutoMapper(typeof(Program));
 
-// Health Checks
-builder.Services.AddHealthChecks();
+// Enhanced Health Checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database")
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
 
 // HTTP Context Accessor
 builder.Services.AddHttpContextAccessor();
@@ -200,7 +118,8 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error");
+    // Use custom global exception middleware for production
+    app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseHsts();
 }
 
@@ -210,24 +129,21 @@ if (app.Configuration.GetValue<bool>("FeatureFlags:EnableSwagger"))
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Personal Finance API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Personal Finance API v1.0");
         c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
         c.DocumentTitle = "Personal Finance Management API";
         c.DefaultModelsExpandDepth(-1);
         c.DisplayRequestDuration();
+        c.EnableTryItOutByDefault();
+        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+        c.EnableFilter();
+        c.ShowExtensions();
+        c.EnableValidator();
     });
 }
 
-// Request Logging
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-    options.GetLevel = (httpContext, elapsed, ex) => ex != null
-        ? Serilog.Events.LogEventLevel.Error
-        : httpContext.Response.StatusCode > 499
-            ? Serilog.Events.LogEventLevel.Error
-            : Serilog.Events.LogEventLevel.Information;
-});
+// Enhanced Request Logging
+app.UseEnhancedRequestLogging();
 
 app.UseHttpsRedirection();
 
@@ -241,44 +157,46 @@ app.UseAuthorization();
 // Controllers
 app.MapControllers();
 
-// Health Checks
-app.MapHealthChecks("/health");
+// Enhanced Health Checks
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                exception = entry.Value.Exception?.Message,
+                duration = entry.Value.Duration.TotalMilliseconds
+            }),
+            totalDuration = report.TotalDuration.TotalMilliseconds,
+            timestamp = DateTime.UtcNow
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 
-// Default route
+// Default route with API information
 app.MapGet("/", () => new
 {
     name = "Personal Finance Management API",
     version = "1.0.0",
     environment = app.Environment.EnvironmentName,
     timestamp = DateTime.UtcNow,
-    status = "healthy"
+    status = "healthy",
+    documentation = app.Configuration.GetValue<bool>("FeatureFlags:EnableSwagger") ? "Available at /" : "Disabled",
+    healthCheck = "Available at /health"
 });
 
-// Global Exception Handler
-app.UseExceptionHandler(errorApp =>
+// Global Exception Handler for Development
+if (app.Environment.IsDevelopment())
 {
-    errorApp.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-
-        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        if (error != null)
-        {
-            var ex = error.Error;
-            Log.Error(ex, "Unhandled exception occurred");
-
-            var response = new
-            {
-                success = false,
-                message = app.Environment.IsDevelopment() ? ex.Message : "An internal server error occurred",
-                details = app.Environment.IsDevelopment() ? ex.StackTrace : null
-            };
-
-            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
-        }
-    });
-});
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+}
 
 // Database Migration and Seeding
 using (var scope = app.Services.CreateScope())
@@ -302,8 +220,7 @@ using (var scope = app.Services.CreateScope())
 try
 {
     Log.Information("Starting Personal Finance Management API");
-    Log.Information("Environment: {Environment}", app.Environment.EnvironmentName);
-    Log.Information("Swagger UI available at: {SwaggerUrl}", app.Configuration.GetValue<bool>("FeatureFlags:EnableSwagger") ? "/" : "Disabled");
+    LoggingConfiguration.LogStartupInformation(app, app.Configuration);
     
     await app.RunAsync();
 }
@@ -313,5 +230,11 @@ catch (Exception ex)
 }
 finally
 {
+    LoggingConfiguration.LogShutdownInformation();
     Log.CloseAndFlush();
 }
+
+/// <summary>
+/// Program entry point class for testing accessibility
+/// </summary>
+public partial class Program { }
