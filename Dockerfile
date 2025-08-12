@@ -34,7 +34,7 @@ COPY --from=publish /app/publish .
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser
 
-# Set environment variables
+# Set environment variables  
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
