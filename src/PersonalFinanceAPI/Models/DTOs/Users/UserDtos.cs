@@ -10,6 +10,8 @@ public class UserProfileDto
     public string LastName { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public DateTime? DateOfBirth { get; set; }
+    public string? Occupation { get; set; }
+    public string Currency { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public bool IsPhoneVerified { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -33,6 +35,14 @@ public class UpdateUserProfileRequest
 
     [DataType(DataType.Date)]
     public DateTime? DateOfBirth { get; set; }
+
+    [StringLength(100)]
+    public string? Occupation { get; set; }
+
+    [Required]
+    [StringLength(3, MinimumLength = 3)]
+    [RegularExpression("^[A-Z]{3}$", ErrorMessage = "Currency must be a valid 3-letter currency code")]
+    public string Currency { get; set; } = "INR";
 }
 
 public class UserPreferencesDto

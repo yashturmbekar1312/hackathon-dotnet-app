@@ -24,6 +24,14 @@ public class RegisterRequest
     public string? PhoneNumber { get; set; }
 
     public DateOnly? DateOfBirth { get; set; }
+
+    [MaxLength(100)]
+    public string? Occupation { get; set; }
+
+    [Required]
+    [StringLength(3, MinimumLength = 3)]
+    [RegularExpression("^[A-Z]{3}$", ErrorMessage = "Currency must be a valid 3-letter currency code (e.g., USD, EUR, INR)")]
+    public string Currency { get; set; } = "INR";
 }
 
 public class VerifyOtpRequest
@@ -69,6 +77,8 @@ public class UserDto
     public string LastName { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public DateOnly? DateOfBirth { get; set; }
+    public string? Occupation { get; set; }
+    public string Currency { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public bool IsPhoneVerified { get; set; }
     public DateTime CreatedAt { get; set; }

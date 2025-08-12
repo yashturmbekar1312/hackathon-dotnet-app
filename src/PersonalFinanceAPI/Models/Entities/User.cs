@@ -37,6 +37,14 @@ public class User
     [Column("date_of_birth")]
     public DateOnly? DateOfBirth { get; set; }
 
+    [Column("occupation")]
+    [MaxLength(100)]
+    public string? Occupation { get; set; }
+
+    [Column("currency")]
+    [MaxLength(3)]
+    public string Currency { get; set; } = "INR";
+
     [Column("is_email_verified")]
     public bool IsEmailVerified { get; set; } = false;
 

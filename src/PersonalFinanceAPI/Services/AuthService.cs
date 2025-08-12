@@ -63,6 +63,8 @@ public class AuthService : IAuthService
             LastName = request.LastName,
             PhoneNumber = request.PhoneNumber,
             DateOfBirth = request.DateOfBirth,
+            Occupation = request.Occupation,
+            Currency = request.Currency,
             OtpCode = GenerateOtpCode(),
             OtpExpiresAt = DateTime.UtcNow.AddMinutes(10) // OTP expires in 10 minutes
         };
@@ -337,6 +339,8 @@ public class AuthService : IAuthService
             LastName = user.LastName,
             PhoneNumber = user.PhoneNumber,
             DateOfBirth = user.DateOfBirth,
+            Occupation = user.Occupation,
+            Currency = user.Currency,
             IsEmailVerified = user.IsEmailVerified,
             IsPhoneVerified = user.IsPhoneVerified,
             CreatedAt = user.CreatedAt,
