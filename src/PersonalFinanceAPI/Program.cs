@@ -25,10 +25,23 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 
 // Database Configuration
+string connectionString;
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
+
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Parse DATABASE_PUBLIC_URL format: postgresql://user:password@host:port/database
+    var uri = new Uri(databaseUrl);
+    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+}
+else
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("No database connection string configured");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL")
-        ?? builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(connectionString);
     options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
     options.EnableDetailedErrors(builder.Environment.IsDevelopment());
 });
