@@ -2,6 +2,7 @@ using PersonalFinanceAPI.Infrastructure.Data;
 using PersonalFinanceAPI.Infrastructure.Security;
 using PersonalFinanceAPI.Models.DTOs.Auth;
 using PersonalFinanceAPI.Models.Entities;
+using PersonalFinanceAPI.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
@@ -22,17 +23,20 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IPasswordHashingService _passwordHashingService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         AppDbContext context,
         IJwtTokenService jwtTokenService,
         IPasswordHashingService passwordHashingService,
+        IEmailService emailService,
         ILogger<AuthService> logger)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
         _passwordHashingService = passwordHashingService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -95,7 +99,24 @@ public class AuthService : IAuthService
         _context.UserSessions.Add(userSession);
         await _context.SaveChangesAsync();
 
-        // TODO: Send OTP via email/SMS
+        // Send OTP via email
+        try
+        {
+            var emailSent = await _emailService.SendOtpEmailAsync(user.Email, user.OtpCode, user.FirstName);
+            if (emailSent)
+            {
+                _logger.LogInformation("OTP email sent successfully to user {UserId} at {Email}", user.Id, user.Email);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to send OTP email to user {UserId} at {Email}, but registration continues", user.Id, user.Email);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while sending OTP email to user {UserId} at {Email}", user.Id, user.Email);
+        }
+
         _logger.LogInformation("OTP generated for user {UserId}: {OtpCode} (expires at {ExpiresAt})", 
             user.Id, user.OtpCode, user.OtpExpiresAt);
 
@@ -132,6 +153,24 @@ public class AuthService : IAuthService
         user.OtpExpiresAt = null;
 
         await _context.SaveChangesAsync();
+
+        // Send welcome email after verification
+        try
+        {
+            var welcomeEmailSent = await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName);
+            if (welcomeEmailSent)
+            {
+                _logger.LogInformation("Welcome email sent successfully to user {UserId}", user.Id);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to send welcome email to user {UserId}", user.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while sending welcome email to user {UserId}", user.Id);
+        }
 
         _logger.LogInformation("Email verified successfully for user {UserId}", user.Id);
         return true;

@@ -84,13 +84,19 @@ if (builder.Configuration.GetValue<bool>("FeatureFlags:EnableSwagger"))
     builder.Services.AddSwaggerConfiguration();
 }
 
+// Configuration Options
+builder.Services.Configure<PersonalFinanceAPI.Models.DTOs.Email.EmailSettings>(
+    builder.Configuration.GetSection("Email"));
+
 // FluentValidation Configuration
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Service Registration
+// Service Registration
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHashingService, PasswordHashingService>();
+builder.Services.AddScoped<IEmailService, PersonalFinanceAPI.Application.Services.EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, PersonalFinanceAPI.Application.Services.UserService>();
 builder.Services.AddScoped<IAccountService, PersonalFinanceAPI.Application.Services.AccountService>();
