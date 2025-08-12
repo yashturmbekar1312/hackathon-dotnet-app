@@ -1,0 +1,54 @@
+# Production deployment compose file for Railway, Render, etc.
+# This version assumes external managed database (PostgreSQL)
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Core application settings
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+
+      # Database connection (Railway provides DATABASE_URL)
+      - DATABASE_PUBLIC_URL=${DATABASE_URL:-${DATABASE_PUBLIC_URL}}
+
+      # JWT Configuration
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=PersonalFinanceAPI
+      - Jwt__Audience=PersonalFinanceAPI-Users
+      - Jwt__AccessTokenExpirationMinutes=60
+      - Jwt__RefreshTokenExpirationDays=7
+
+      # Feature flags
+      - FeatureFlags__EnableSwagger=true
+
+      # CORS settings
+      - CORS__AllowedOrigins__0=${FRONTEND_URL:-*}
+
+      # Logging
+      - Serilog__MinimumLevel__Default=Information
+      - Serilog__MinimumLevel__Override__Microsoft=Warning
+      - Serilog__MinimumLevel__Override__System=Warning
+
+    ports:
+      - "8080:8080"
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits for cloud deployment
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
