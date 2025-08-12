@@ -72,4 +72,5 @@ public class User
     public virtual ICollection<MonthlySummary> MonthlySummaries { get; set; } = new List<MonthlySummary>();
     public virtual ICollection<FinancialGoal> FinancialGoals { get; set; } = new List<FinancialGoal>();
     public virtual ICollection<InvestmentSuggestion> InvestmentSuggestions { get; set; } = new List<InvestmentSuggestion>();
+    public virtual ICollection<IncomePlan> IncomePlans { get; set; } = new List<IncomePlan>();
 }

@@ -28,6 +28,10 @@ public class AppDbContext : DbContext
     public DbSet<SuggestionHistory> SuggestionHistory { get; set; }
     public DbSet<UserAlert> UserAlerts { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<IncomePlan> IncomePlans { get; set; }
+    public DbSet<IncomeSource> IncomeSources { get; set; }
+    public DbSet<IncomeEntry> IncomeEntries { get; set; }
+    public DbSet<IncomePlanMilestone> IncomePlanMilestones { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -203,6 +207,31 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(al => al.UserId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Income Plan relationships
+        modelBuilder.Entity<IncomePlan>()
+            .HasOne(ip => ip.User)
+            .WithMany(u => u.IncomePlans)
+            .HasForeignKey(ip => ip.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<IncomeSource>()
+            .HasOne(s => s.IncomePlan)
+            .WithMany(ip => ip.IncomeSources)
+            .HasForeignKey(s => s.IncomePlanId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<IncomeEntry>()
+            .HasOne(e => e.IncomeSource)
+            .WithMany(s => s.IncomeEntries)
+            .HasForeignKey(e => e.IncomeSourceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<IncomePlanMilestone>()
+            .HasOne(m => m.IncomePlan)
+            .WithMany(ip => ip.Milestones)
+            .HasForeignKey(m => m.IncomePlanId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Unique constraints
         modelBuilder.Entity<User>()

@@ -112,6 +112,7 @@ builder.Services.AddScoped<IAccountService, PersonalFinanceAPI.Application.Servi
 builder.Services.AddScoped<IAnalyticsService, PersonalFinanceAPI.Application.Services.AnalyticsService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IBudgetService, BudgetService>();
+builder.Services.AddScoped<IIncomePlanService, PersonalFinanceAPI.Application.Services.IncomePlanService>();
 
 // AutoMapper Configuration
 builder.Services.AddAutoMapper(typeof(Program));
