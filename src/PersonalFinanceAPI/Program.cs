@@ -27,7 +27,8 @@ builder.Services.AddControllers();
 // Database Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection"));
     options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
     options.EnableDetailedErrors(builder.Environment.IsDevelopment());
 });
@@ -162,6 +163,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHashingService, PasswordHashingService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, PersonalFinanceAPI.Application.Services.UserService>();
+builder.Services.AddScoped<IAccountService, PersonalFinanceAPI.Application.Services.AccountService>();
+builder.Services.AddScoped<IAnalyticsService, PersonalFinanceAPI.Application.Services.AnalyticsService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IBudgetService, BudgetService>();
 
