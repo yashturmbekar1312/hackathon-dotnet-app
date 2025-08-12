@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Mail;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PersonalFinanceAPI.Core.Interfaces;
 using PersonalFinanceAPI.Models.DTOs.Email;
@@ -13,11 +15,18 @@ public class EmailService : IEmailService
 {
     private readonly EmailSettings _emailSettings;
     private readonly ILogger<EmailService> _logger;
+    private readonly HttpClient _httpClient;
 
+    /// <summary>
+    /// Initializes a new instance of the EmailService class
+    /// </summary>
+    /// <param name="emailSettings">Email configuration settings</param>
+    /// <param name="logger">Logger instance</param>
     public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
     {
         _emailSettings = emailSettings.Value;
         _logger = logger;
+        _httpClient = new HttpClient();
     }
 
     /// <summary>
@@ -132,7 +141,13 @@ public class EmailService : IEmailService
     {
         try
         {
-            // Check if email settings are configured
+            // Check if API key is configured for Brevo API
+            if (!string.IsNullOrEmpty(_emailSettings.ApiKey) && _emailSettings.Provider.Equals("API", StringComparison.OrdinalIgnoreCase))
+            {
+                return await SendEmailViaApiAsync(emailMessage);
+            }
+            
+            // Check if SMTP settings are configured
             if (string.IsNullOrEmpty(_emailSettings.SmtpHost) || 
                 string.IsNullOrEmpty(_emailSettings.Username) || 
                 string.IsNullOrEmpty(_emailSettings.FromEmail))
@@ -149,6 +164,80 @@ public class EmailService : IEmailService
                 return true; // Return true for development
             }
 
+            return await SendEmailViaSmtpAsync(emailMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Email}", emailMessage.To);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Send email via Brevo API
+    /// </summary>
+    private async Task<bool> SendEmailViaApiAsync(EmailMessage emailMessage)
+    {
+        try
+        {
+            // Brevo API v3 requires specific payload format with verified sender
+            var payload = new
+            {
+                sender = new { 
+                    name = _emailSettings.FromName, 
+                    email = _emailSettings.FromEmail 
+                },
+                to = new[] { new { email = emailMessage.To } },
+                subject = emailMessage.Subject,
+                htmlContent = emailMessage.IsHtml ? emailMessage.Body : $"<html><body><pre>{emailMessage.Body}</pre></body></html>"
+            };
+
+            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions 
+            { 
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            });
+            
+            _logger.LogInformation("Sending email via Brevo API. Payload: {Payload}", json);
+            
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("api-key", _emailSettings.ApiKey);
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            var response = await _httpClient.PostAsync(_emailSettings.ApiUrl, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            _logger.LogInformation("Brevo API Response Status: {StatusCode}, Content: {ResponseContent}", 
+                response.StatusCode, responseContent);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Email sent successfully via API to {Email}", emailMessage.To);
+                return true;
+            }
+            else
+            {
+                _logger.LogError("Failed to send email via API. Status: {StatusCode}, Response: {Response}", 
+                    response.StatusCode, responseContent);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while sending email via API to {Email}", emailMessage.To);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Send email via SMTP
+    /// </summary>
+    private async Task<bool> SendEmailViaSmtpAsync(EmailMessage emailMessage)
+    {
+        try
+        {
             using var client = new SmtpClient(_emailSettings.SmtpHost, _emailSettings.SmtpPort);
             client.EnableSsl = _emailSettings.EnableSsl;
             client.UseDefaultCredentials = false;
@@ -175,12 +264,12 @@ public class EmailService : IEmailService
             }
 
             await client.SendMailAsync(mailMessage);
-            _logger.LogInformation("Email sent successfully to {Email}", emailMessage.To);
+            _logger.LogInformation("Email sent successfully via SMTP to {Email}", emailMessage.To);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {Email}", emailMessage.To);
+            _logger.LogError(ex, "Failed to send email via SMTP to {Email}", emailMessage.To);
             return false;
         }
     }
@@ -321,5 +410,13 @@ public class EmailService : IEmailService
     </div>
 </body>
 </html>";
+    }
+
+    /// <summary>
+    /// Dispose resources
+    /// </summary>
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
     }
 }

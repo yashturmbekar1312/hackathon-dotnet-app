@@ -5,7 +5,7 @@ namespace PersonalFinanceAPI.Core.Interfaces;
 /// <summary>
 /// Interface for email service operations
 /// </summary>
-public interface IEmailService
+public interface IEmailService : IDisposable
 {
     /// <summary>
     /// Sends an OTP verification email to the specified email address

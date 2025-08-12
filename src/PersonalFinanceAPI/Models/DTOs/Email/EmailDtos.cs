@@ -8,6 +8,21 @@ namespace PersonalFinanceAPI.Models.DTOs.Email;
 public class EmailSettings
 {
     /// <summary>
+    /// Email provider type (SMTP or API)
+    /// </summary>
+    public string Provider { get; set; } = "SMTP";
+
+    /// <summary>
+    /// API key for email service (Brevo/SendinBlue)
+    /// </summary>
+    public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// API endpoint URL
+    /// </summary>
+    public string ApiUrl { get; set; } = "https://api.brevo.com/v3/smtp/email";
+
+    /// <summary>
     /// SMTP server host
     /// </summary>
     public string SmtpHost { get; set; } = string.Empty;
