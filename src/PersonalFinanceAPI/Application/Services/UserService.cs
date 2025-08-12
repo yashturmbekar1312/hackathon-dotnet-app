@@ -38,6 +38,7 @@ public class UserService : IUserService
             DateOfBirth = user.DateOfBirth?.ToDateTime(TimeOnly.MinValue),
             Occupation = user.Occupation,
             Currency = user.Currency,
+            AnnualIncome = user.AnnualIncome,
             IsEmailVerified = user.IsEmailVerified,
             IsPhoneVerified = user.IsPhoneVerified,
             CreatedAt = user.CreatedAt,
@@ -62,6 +63,7 @@ public class UserService : IUserService
         user.DateOfBirth = request.DateOfBirth.HasValue ? DateOnly.FromDateTime(request.DateOfBirth.Value) : null;
         user.Occupation = request.Occupation;
         user.Currency = request.Currency;
+        user.AnnualIncome = request.AnnualIncome;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

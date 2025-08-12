@@ -32,6 +32,9 @@ public class RegisterRequest
     [StringLength(3, MinimumLength = 3)]
     [RegularExpression("^[A-Z]{3}$", ErrorMessage = "Currency must be a valid 3-letter currency code (e.g., USD, EUR, INR)")]
     public string Currency { get; set; } = "INR";
+
+    [Range(0, double.MaxValue, ErrorMessage = "Annual income must be a positive value")]
+    public decimal? AnnualIncome { get; set; }
 }
 
 public class VerifyOtpRequest
@@ -79,6 +82,7 @@ public class UserDto
     public DateOnly? DateOfBirth { get; set; }
     public string? Occupation { get; set; }
     public string Currency { get; set; } = string.Empty;
+    public decimal? AnnualIncome { get; set; }
     public bool IsEmailVerified { get; set; }
     public bool IsPhoneVerified { get; set; }
     public DateTime CreatedAt { get; set; }

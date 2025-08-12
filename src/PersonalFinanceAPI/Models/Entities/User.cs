@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace PersonalFinanceAPI.Models.Entities;
 
@@ -44,6 +45,10 @@ public class User
     [Column("currency")]
     [MaxLength(3)]
     public string Currency { get; set; } = "INR";
+
+    [Column("annual_income")]
+    [Precision(18, 2)]
+    public decimal? AnnualIncome { get; set; }
 
     [Column("is_email_verified")]
     public bool IsEmailVerified { get; set; } = false;
