@@ -85,8 +85,17 @@ if (builder.Configuration.GetValue<bool>("FeatureFlags:EnableSwagger"))
 }
 
 // Configuration Options
-builder.Services.Configure<PersonalFinanceAPI.Models.DTOs.Email.EmailSettings>(
-    builder.Configuration.GetSection("Email"));
+builder.Services.Configure<PersonalFinanceAPI.Models.DTOs.Email.EmailSettings>(options =>
+{
+    builder.Configuration.GetSection("Email").Bind(options);
+    
+    // Override ApiKey from environment variable if available
+    var apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY");
+    if (!string.IsNullOrEmpty(apiKey))
+    {
+        options.ApiKey = apiKey;
+    }
+});
 
 // FluentValidation Configuration
 builder.Services.AddFluentValidationAutoValidation();

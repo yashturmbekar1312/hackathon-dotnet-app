@@ -156,3 +156,9 @@ yarn.lock
 # Auto-generated files
 **/migrations/*
 !**/migrations/.gitkeep
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
