@@ -96,11 +96,6 @@ StyleCopReport.xml
 *.svclog
 *.scc
 
-# Docker
-Dockerfile*
-docker-compose*
-.dockerignore
-
 # Database
 *.db
 *.sqlite
