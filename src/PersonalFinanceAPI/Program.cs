@@ -25,24 +25,59 @@ builder.Services.AddControllers();
 
 // Database Configuration
 string connectionString;
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL") 
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-    // Parse DATABASE_PUBLIC_URL format: postgresql://user:password@host:port/database
-    var uri = new Uri(databaseUrl);
-    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+    try
+    {
+        // Parse DATABASE_URL format: postgresql://user:password@host:port/database
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;Include Error Detail=true;Timeout=30;Command Timeout=30;Pooling=true;MinPoolSize=1;MaxPoolSize=20";
+        
+        Log.Information("Using database connection from environment variable. Host: {Host}, Database: {Database}", uri.Host, uri.AbsolutePath.Trim('/'));
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Failed to parse database URL from environment variable: {DatabaseUrl}", databaseUrl);
+        throw new InvalidOperationException("Invalid database URL format", ex);
+    }
 }
 else
 {
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("No database connection string configured");
+    Log.Information("Using database connection from configuration file");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(connectionString);
-    options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
-    options.EnableDetailedErrors(builder.Environment.IsDevelopment());
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+        npgsqlOptions.CommandTimeout(30);
+    });
+    
+    // Only enable these in development to reduce logging
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableSensitiveDataLogging();
+        options.EnableDetailedErrors();
+    }
+    else
+    {
+        // In production, disable verbose logging to prevent log flooding
+        options.EnableSensitiveDataLogging(false);
+        options.EnableDetailedErrors(false);
+        options.ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning));
+    }
 });
 
 // Enhanced JWT Authentication Configuration

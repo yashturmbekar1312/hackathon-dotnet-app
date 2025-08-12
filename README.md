@@ -125,6 +125,7 @@ The application includes comprehensive migration support:
 - **✅ Rollback Support**: Development rollback capabilities
 
 **Migration files:**
+
 - `Migrations/20250812180637_InitialCreate.cs` - Complete database schema
 - `migrate-database.sh` / `migrate-database.ps1` - Deployment scripts
 - `MIGRATION_GUIDE.md` - Comprehensive migration documentation

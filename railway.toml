@@ -14,3 +14,8 @@ restartPolicyMaxRetries = 3
 # Environment variables for deployment
 [experimental]
 configAsCode = true
+
+# Set environment variables
+[environments.production.variables]
+ASPNETCORE_ENVIRONMENT = "Production"
+ASPNETCORE_URLS = "http://0.0.0.0:$PORT"

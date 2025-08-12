@@ -38,9 +38,22 @@ public class GlobalExceptionMiddleware
         var correlationId = context.TraceIdentifier;
         var userEmail = context.User?.Identity?.Name ?? "Anonymous";
         
-        _logger.LogError(exception, 
-            "Unhandled exception occurred. CorrelationId: {CorrelationId}, Path: {Path}, Method: {Method}, User: {User}",
-            correlationId, context.Request.Path, context.Request.Method, userEmail);
+        // Only log detailed errors in development, reduce production logging
+        if (_environment.IsDevelopment())
+        {
+            _logger.LogError(exception, 
+                "Unhandled exception occurred. CorrelationId: {CorrelationId}, Path: {Path}, Method: {Method}, User: {User}",
+                correlationId, context.Request.Path, context.Request.Method, userEmail);
+        }
+        else
+        {
+            // In production, only log critical errors to reduce log volume
+            if (exception is not (ArgumentException or FluentValidation.ValidationException or NotFoundException or BadRequestException))
+            {
+                _logger.LogError("Internal error occurred. CorrelationId: {CorrelationId}, Type: {ExceptionType}",
+                    correlationId, exception.GetType().Name);
+            }
+        }
 
         var response = context.Response;
         response.ContentType = "application/json";

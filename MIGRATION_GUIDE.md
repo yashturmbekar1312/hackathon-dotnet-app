@@ -5,6 +5,7 @@ This guide explains how to handle Entity Framework migrations for the Personal F
 ## Overview
 
 The Personal Finance API uses Entity Framework Core with PostgreSQL and includes:
+
 - ✅ Automatic migration application on startup
 - ✅ Retry logic for migration failures
 - ✅ Comprehensive logging for migration processes
@@ -15,11 +16,13 @@ The Personal Finance API uses Entity Framework Core with PostgreSQL and includes
 The following migration-related files have been created:
 
 ### Core Migrations
+
 - `Migrations/20250812180637_InitialCreate.cs` - Initial database schema migration
 - `Migrations/20250812180637_InitialCreate.Designer.cs` - Migration metadata
 - `Migrations/AppDbContextModelSnapshot.cs` - Current model snapshot
 
 ### Migration Services
+
 - `Infrastructure/Data/MigrationService.cs` - Service for applying migrations with retry logic
 - `migrate-database.sh` - Linux/macOS deployment script
 - `migrate-database.ps1` - Windows PowerShell deployment script
@@ -33,12 +36,13 @@ The application automatically applies pending migrations during startup:
 ```csharp
 // In Program.cs
 var migrationSuccess = await MigrationService.ApplyMigrationsAsync(
-    app.Services, 
-    retryCount: 3, 
+    app.Services,
+    retryCount: 3,
     delayBetweenRetries: 5000);
 ```
 
 **Features:**
+
 - Retries failed migrations up to 3 times
 - 5-second delay between retry attempts
 - Comprehensive logging of migration status
@@ -49,37 +53,45 @@ var migrationSuccess = await MigrationService.ApplyMigrationsAsync(
 You have multiple options for applying migrations in production:
 
 #### Option A: Automatic Migration (Recommended)
+
 The application will automatically apply migrations when it starts. This is the simplest approach and works well for most scenarios.
 
 **Pros:**
+
 - No manual intervention required
 - Automatic retry logic
 - Integrated with application lifecycle
 
 **Cons:**
+
 - Application startup time may be longer during migrations
 - All app instances will attempt migration (first one wins)
 
 #### Option B: Manual Migration via Scripts
+
 Use the provided deployment scripts to apply migrations before starting the application.
 
 **Linux/macOS:**
+
 ```bash
 chmod +x migrate-database.sh
 ./migrate-database.sh
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 .\migrate-database.ps1
 ```
 
 **Pros:**
+
 - Full control over migration timing
 - Can be integrated into CI/CD pipelines
 - Separates migration from application startup
 
 #### Option C: Manual EF Commands
+
 For advanced scenarios, use Entity Framework commands directly:
 
 ```bash
@@ -129,6 +141,7 @@ dotnet ef migrations add <MigrationName>
 ```
 
 Example:
+
 ```bash
 dotnet ef migrations add AddUserProfileFields
 ```
@@ -198,12 +211,15 @@ pg_dump $DATABASE_PUBLIC_URL > backup_$(date +%Y%m%d_%H%M%S).sql
 ### Common Issues
 
 #### 1. Connection Timeout During Migration
+
 **Solution:** Increase the retry count and delay in the migration service or use manual migration scripts.
 
 #### 2. Migration Lock Issues
+
 **Solution:** If migrations get stuck, check for long-running transactions and restart the database if necessary.
 
 #### 3. Seed Data Conflicts
+
 **Solution:** The initial migration includes seed data. If you modify seed data, create a new migration rather than editing the initial one.
 
 ### Logging
