@@ -153,10 +153,6 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# Auto-generated files
-**/migrations/*
-!**/migrations/.gitkeep
-
 # Environment variables
 .env
 .env.local

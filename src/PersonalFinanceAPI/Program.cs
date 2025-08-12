@@ -219,16 +219,29 @@ using (var scope = app.Services.CreateScope())
 {
     try
     {
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Log.Information("Starting database migration process...");
         
-        Log.Information("Checking database connection...");
-        await context.Database.EnsureCreatedAsync();
+        // Apply migrations automatically
+        var migrationSuccess = await PersonalFinanceAPI.Infrastructure.Data.MigrationService.ApplyMigrationsAsync(
+            app.Services, 
+            retryCount: 3, 
+            delayBetweenRetries: 5000);
         
-        Log.Information("Database connection established successfully");
+        if (!migrationSuccess)
+        {
+            Log.Fatal("Database migration failed. Application cannot start without a properly configured database");
+            throw new InvalidOperationException("Database migration failed");
+        }
+        
+        // Get migration information for logging
+        var migrationInfo = await PersonalFinanceAPI.Infrastructure.Data.MigrationService.GetMigrationInfoAsync(app.Services);
+        Log.Information("Database migration completed successfully. Applied migrations: {AppliedCount}, Total migrations: {TotalCount}", 
+            migrationInfo.AppliedMigrations.Count, 
+            migrationInfo.AllMigrations.Count);
     }
     catch (Exception ex)
     {
-        Log.Fatal(ex, "Failed to connect to database during startup");
+        Log.Fatal(ex, "Failed to initialize database during startup");
         throw;
     }
 }

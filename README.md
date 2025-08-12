@@ -49,6 +49,9 @@ A comprehensive, production-ready Personal Finance Management API built with .NE
 - **Global Exception Handling** with structured error responses
 - **Comprehensive Logging** with Serilog (Console, File, Audit logs)
 - **API Documentation** with enhanced Swagger/OpenAPI
+- **Database Migrations** with automatic deployment and retry logic
+- **Health Checks** for monitoring application and database status
+- **Containerization** with Docker for consistent deployments
 - **Unit & Integration Tests** with high coverage
 - **Health Checks** for monitoring and alerting
 - **Configuration Management** with environment-specific settings
@@ -99,6 +102,8 @@ cd hackathon-dotnet-app
 
 ### 2. Database Setup
 
+The application uses Entity Framework Core with PostgreSQL and includes automatic migration handling.
+
 #### Option A: Using Docker Compose (Recommended)
 
 ```bash
@@ -109,7 +114,22 @@ docker-compose up -d postgres
 
 1. Install PostgreSQL
 2. Create database: `personal_finance_dev`
-3. Run the schema script: `database-schema.sql`
+
+#### Database Migrations
+
+The application includes comprehensive migration support:
+
+- **✅ Automatic Migration**: Database schema is applied automatically on startup
+- **✅ Retry Logic**: Failed migrations are retried with exponential backoff
+- **✅ Migration Scripts**: Manual migration scripts for deployment scenarios
+- **✅ Rollback Support**: Development rollback capabilities
+
+**Migration files:**
+- `Migrations/20250812180637_InitialCreate.cs` - Complete database schema
+- `migrate-database.sh` / `migrate-database.ps1` - Deployment scripts
+- `MIGRATION_GUIDE.md` - Comprehensive migration documentation
+
+For detailed migration information, see [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md).
 
 ### 3. Configure Connection String
 
