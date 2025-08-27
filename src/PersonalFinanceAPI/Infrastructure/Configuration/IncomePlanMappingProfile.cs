@@ -52,16 +52,6 @@ namespace PersonalFinanceAPI.Infrastructure.Configuration
                 .ForMember(dest => dest.IncomeSource, opt => opt.Ignore());
 
             CreateMap<IncomeEntry, IncomeEntryDto>();
-
-            // Income Plan Milestone mappings
-            CreateMap<IncomePlanMilestone, object>()
-                .ForMember("Id", opt => opt.MapFrom(src => src.Id))
-                .ForMember("Name", opt => opt.MapFrom(src => src.Name))
-                .ForMember("Description", opt => opt.MapFrom(src => src.Description))
-                .ForMember("TargetAmount", opt => opt.MapFrom(src => src.TargetAmount))
-                .ForMember("TargetDate", opt => opt.MapFrom(src => src.TargetDate))
-                .ForMember("IsAchieved", opt => opt.MapFrom(src => src.IsAchieved))
-                .ForMember("AchievedDate", opt => opt.MapFrom(src => src.AchievedDate));
         }
     }
 }
