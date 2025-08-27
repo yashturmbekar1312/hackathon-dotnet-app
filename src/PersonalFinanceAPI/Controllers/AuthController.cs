@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "User registered successfully. Please verify your email with the OTP sent.",
+                message = "User registered successfully. Please request OTP to verify your email.",
                 data = response
             });
         }
@@ -57,6 +57,52 @@ public class AuthController : ControllerBase
             {
                 success = false,
                 message = "An error occurred during registration"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Send OTP to user's email for verification
+    /// </summary>
+    [HttpPost("send-otp")]
+    public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+    {
+        try
+        {
+            var result = await _authService.SendOtpAsync(request);
+
+            if (result)
+            {
+                _logger.LogInformation("OTP sent successfully to: {Email}", request.Email);
+                return Ok(new
+                {
+                    success = true,
+                    message = "OTP sent successfully to your email"
+                });
+            }
+
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Failed to send OTP. Please try again."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Send OTP failed for email: {Email}", request.Email);
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending OTP for email: {Email}", request.Email);
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "An error occurred while sending OTP"
             });
         }
     }

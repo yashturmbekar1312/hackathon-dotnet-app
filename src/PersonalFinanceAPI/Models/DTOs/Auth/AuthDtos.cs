@@ -37,6 +37,13 @@ public class RegisterRequest
     public decimal? AnnualIncome { get; set; }
 }
 
+public class SendOtpRequest
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
 public class VerifyOtpRequest
 {
     [Required]

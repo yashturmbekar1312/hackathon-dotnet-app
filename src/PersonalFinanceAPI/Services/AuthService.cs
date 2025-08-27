@@ -11,6 +11,7 @@ namespace PersonalFinanceAPI.Services;
 public interface IAuthService
 {
     Task<AuthResponse> RegisterAsync(RegisterRequest request, string ipAddress, string userAgent);
+    Task<bool> SendOtpAsync(SendOtpRequest request);
     Task<bool> VerifyOtpAsync(VerifyOtpRequest request);
     Task<AuthResponse> LoginAsync(LoginRequest request, string ipAddress, string userAgent);
     Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request, string ipAddress, string userAgent);
@@ -65,9 +66,8 @@ public class AuthService : IAuthService
             DateOfBirth = request.DateOfBirth,
             Occupation = request.Occupation,
             Currency = request.Currency,
-            AnnualIncome = request.AnnualIncome,
-            OtpCode = GenerateOtpCode(),
-            OtpExpiresAt = DateTime.UtcNow.AddMinutes(10) // OTP expires in 10 minutes
+            AnnualIncome = request.AnnualIncome
+            // Removed OTP generation from registration - will be generated when requested
         };
 
         _context.Users.Add(user);
@@ -102,26 +102,7 @@ public class AuthService : IAuthService
         _context.UserSessions.Add(userSession);
         await _context.SaveChangesAsync();
 
-        // Send OTP via email
-        try
-        {
-            var emailSent = await _emailService.SendOtpEmailAsync(user.Email, user.OtpCode, user.FirstName);
-            if (emailSent)
-            {
-                _logger.LogInformation("OTP email sent successfully to user {UserId} at {Email}", user.Id, user.Email);
-            }
-            else
-            {
-                _logger.LogWarning("Failed to send OTP email to user {UserId} at {Email}, but registration continues", user.Id, user.Email);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception occurred while sending OTP email to user {UserId} at {Email}", user.Id, user.Email);
-        }
-
-        _logger.LogInformation("OTP generated for user {UserId}: {OtpCode} (expires at {ExpiresAt})", 
-            user.Id, user.OtpCode, user.OtpExpiresAt);
+        _logger.LogInformation("User registration completed successfully for {UserId}", user.Id);
 
         return new AuthResponse
         {
@@ -130,6 +111,47 @@ public class AuthService : IAuthService
             ExpiresAt = userSession.ExpiresAt,
             User = MapToUserDto(user)
         };
+    }
+
+    public async Task<bool> SendOtpAsync(SendOtpRequest request)
+    {
+        _logger.LogInformation("Sending OTP for email: {Email}", request.Email);
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user == null)
+        {
+            _logger.LogWarning("OTP requested for non-existent email: {Email}", request.Email);
+            throw new InvalidOperationException("User with this email does not exist");
+        }
+
+        // Generate new OTP
+        user.OtpCode = GenerateOtpCode();
+        user.OtpExpiresAt = DateTime.UtcNow.AddMinutes(10); // OTP expires in 10 minutes
+
+        await _context.SaveChangesAsync();
+
+        // Send OTP via email
+        try
+        {
+            var emailSent = await _emailService.SendOtpEmailAsync(user.Email, user.OtpCode, user.FirstName);
+            if (emailSent)
+            {
+                _logger.LogInformation("OTP email sent successfully to user {UserId} at {Email}", user.Id, user.Email);
+                return true;
+            }
+            else
+            {
+                _logger.LogWarning("Failed to send OTP email to user {UserId} at {Email}", user.Id, user.Email);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while sending OTP email to user {UserId} at {Email}", user.Id, user.Email);
+            return false;
+        }
     }
 
     public async Task<bool> VerifyOtpAsync(VerifyOtpRequest request)
