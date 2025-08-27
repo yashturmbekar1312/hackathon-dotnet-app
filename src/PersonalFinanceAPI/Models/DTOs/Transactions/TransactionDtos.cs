@@ -39,7 +39,7 @@ public class CreateTransactionRequest
     public Guid? CategoryId { get; set; }
 
     [Required]
-    [Range(0.01, double.MaxValue)]
+    [Range(0.01, 999999999.99, ErrorMessage = "Amount must be between 0.01 and 999,999,999.99")]
     public decimal Amount { get; set; }
 
     public string CurrencyCode { get; set; } = "INR";
