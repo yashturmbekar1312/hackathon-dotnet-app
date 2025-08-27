@@ -81,18 +81,10 @@ namespace PersonalFinanceAPI.Models.Entities
         public string Status { get; set; } = "ACTIVE";
 
         /// <summary>
-        /// Gets or sets the priority level of the income plan (1=Low, 3=Medium, 5=High)
+        /// Gets or sets whether the income plan is active
         /// </summary>
-        [Column("priority")]
-        [Range(1, 5)]
-        public int Priority { get; set; } = 3;
-
-        /// <summary>
-        /// Gets or sets additional notes for the income plan
-        /// </summary>
-        [Column("notes")]
-        [MaxLength(2000)]
-        public string? Notes { get; set; }
+        [Column("is_active")]
+        public bool IsActive { get; set; } = true;
 
         /// <summary>
         /// Gets or sets when this income plan was created

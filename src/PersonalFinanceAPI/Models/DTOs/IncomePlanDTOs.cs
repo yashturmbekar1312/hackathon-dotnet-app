@@ -46,16 +46,9 @@ namespace PersonalFinanceAPI.Models.DTOs
         public DateTime? EndDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the priority level (1=Low, 3=Medium, 5=High)
+        /// Gets or sets whether the income plan is active
         /// </summary>
-        [Range(1, 5, ErrorMessage = "Priority must be between 1 and 5")]
-        public int Priority { get; set; } = 3;
-
-        /// <summary>
-        /// Gets or sets additional notes
-        /// </summary>
-        [StringLength(2000, ErrorMessage = "Notes cannot exceed 2000 characters")]
-        public string? Notes { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 
     /// <summary>
@@ -99,16 +92,9 @@ namespace PersonalFinanceAPI.Models.DTOs
         public string? Status { get; set; }
 
         /// <summary>
-        /// Gets or sets the priority level (1=Low, 3=Medium, 5=High)
+        /// Gets or sets whether the income plan is active
         /// </summary>
-        [Range(1, 5, ErrorMessage = "Priority must be between 1 and 5")]
-        public int? Priority { get; set; }
-
-        /// <summary>
-        /// Gets or sets additional notes
-        /// </summary>
-        [StringLength(2000, ErrorMessage = "Notes cannot exceed 2000 characters")]
-        public string? Notes { get; set; }
+        public bool? IsActive { get; set; }
     }
 
     /// <summary>
@@ -167,14 +153,9 @@ namespace PersonalFinanceAPI.Models.DTOs
         public string Status { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the priority
+        /// Gets or sets whether the income plan is active
         /// </summary>
-        public int Priority { get; set; }
-
-        /// <summary>
-        /// Gets or sets the notes
-        /// </summary>
-        public string? Notes { get; set; }
+        public bool IsActive { get; set; }
 
         /// <summary>
         /// Gets or sets the creation date

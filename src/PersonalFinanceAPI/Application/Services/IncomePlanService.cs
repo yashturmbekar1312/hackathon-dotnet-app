@@ -156,11 +156,8 @@ namespace PersonalFinanceAPI.Application.Services
                 if (!string.IsNullOrEmpty(updateDto.Status))
                     incomePlan.Status = updateDto.Status;
                 
-                if (updateDto.Priority.HasValue)
-                    incomePlan.Priority = updateDto.Priority.Value;
-                
-                if (updateDto.Notes != null)
-                    incomePlan.Notes = updateDto.Notes;
+                if (updateDto.IsActive.HasValue)
+                    incomePlan.IsActive = updateDto.IsActive.Value;
 
                 incomePlan.UpdatedAt = DateTime.UtcNow;
 
